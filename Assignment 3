@@ -1,0 +1,46 @@
+from sklearn.datasets import load_digits
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+import numpy as np
+
+# Load dataset (Replace this with your dataset loading process)
+digits = load_digits()
+X, y = digits.data, digits.target
+
+# Split the data into an initial training set and an unlabeled pool
+X_train, X_pool, y_train, y_pool = train_test_split(X, y, test_size=0.9, random_state=42)
+
+# Initialize the classifier
+classifier = LogisticRegression()
+
+# Train initial model
+classifier.fit(X_train, y_train)
+
+# Active Learning loop
+# Implement uncertainty-based sample selection (Least Confidence)
+while len(X_pool) > 0:
+    # Predict class probabilities for the unlabeled pool
+    probabilities = classifier.predict_proba(X_pool)
+    
+    # Calculate uncertainty using least confidence (min probability)
+    uncertainty = 1 - np.max(probabilities, axis=1)
+    
+    # Choose the sample with the least confidence
+    idx = np.argmin(uncertainty)
+    X_selected = X_pool[idx]
+    y_selected = y_pool[idx]
+    
+    # Add the selected sample to the training set
+    X_train = np.vstack((X_train, X_selected.reshape(1, -1)))
+    y_train = np.hstack((y_train, y_selected))
+    
+    # Remove the selected sample from the pool
+    X_pool = np.delete(X_pool, idx, axis=0)
+    y_pool = np.delete(y_pool, idx)
+    
+    # Retrain the classifier
+    classifier.fit(X_train, y_train)
+
+    # Evaluation (replace this with your evaluation code)
+    accuracy = classifier.score(X_test, y_test)
+    print(f"Accuracy after selecting a sample: {accuracy:.4f}")
